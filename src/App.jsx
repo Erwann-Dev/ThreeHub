@@ -1,20 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
+import Room from './Components/Room.jsx';
+import Sphere from './Components/Sphere.jsx';
+import VirtualJoystick from './Components/VirtualJoystick.jsx';
+import handleKeyDown from "./interaction/KeyboardEvent.jsx";
+import { handleMouseMove, handleMouseDown, handleMouseUp } from "./interaction/MouseEvent.jsx";
+import { handleTouchMove, handleTouchStart } from "./interaction/TouchEvent.jsx";
+import { setupScene, setupCamera, setupRenderer } from './utils/SceneUtils.jsx';
+import { addEventListeners, removeEventListeners } from './utils/EventListeners.jsx';
 import * as THREE from 'three';
-import Room from './Room.jsx';
-import Sphere from './Sphere.jsx';
 
 function App() {
     const mountRef = useRef(null);
-    const sceneRef = useRef(new THREE.Scene());
+    const sceneRef = useRef(setupScene());
     const cameraRef = useRef(null);
     const rendererRef = useRef(null);
-    const [texture, setTexture] = useState(null);
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
-    const rotationSpeed = 0.005; // Adjust this for faster/slower rotation
-    const moveSpeed = 0.3; // Adjust this for faster/slower movement
-    const groundHeight = 0; // The height of the camera from the ground
+    const rotationSpeed = 0.005;
+    const moveSpeed = 0.3;
+    const groundHeight = 0;
     const lastTouchRef = useRef({ x: 0, y: 0 });
 
     const roomDimensions = {
@@ -25,32 +30,28 @@ function App() {
 
     useEffect(() => {
         setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-        console.log('isTouchDevice', isTouchDevice);
 
-        const scene = sceneRef.current;
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, groundHeight, roomDimensions.width / 2 - 1);
-        cameraRef.current = camera;
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        rendererRef.current = renderer;
-        mountRef.current.appendChild(renderer.domElement);
+        cameraRef.current = setupCamera(window.innerWidth, window.innerHeight, groundHeight, roomDimensions.width);
+        rendererRef.current = setupRenderer(window.innerWidth, window.innerHeight, mountRef);
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-        scene.add(ambientLight);
+        sceneRef.current.add(ambientLight);
 
         const animate = () => {
             requestAnimationFrame(animate);
-            renderer.render(scene, camera);
+            rendererRef.current.render(sceneRef.current, cameraRef.current);
         };
 
         animate();
 
         const handleResize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+            cameraRef.current.updateProjectionMatrix();
+            rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+            setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+            if (!isTouchDevice) {
+                window.addEventListener('touchmove', handleTouchMove);
+            }
         };
 
         window.addEventListener('resize', handleResize);
@@ -58,145 +59,63 @@ function App() {
         return () => {
             window.removeEventListener('resize', handleResize);
             if (mountRef.current) {
-                mountRef.current.removeChild(renderer.domElement);
+                mountRef.current.removeChild(rendererRef.current.domElement);
             }
-            renderer.dispose();
+            rendererRef.current.dispose();
         };
-    }, [isTouchDevice]); // Include isTouchDevice in the dependency array
+    }, []);
 
-    const handleFileChange = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const textureLoader = new THREE.TextureLoader();
-                const loadedTexture = textureLoader.load(e.target.result);
-                setTexture(loadedTexture);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const checkCollision = (newPosition) => {
-        const halfWidth = roomDimensions.width / 2;
-        const halfDepth = roomDimensions.depth / 2;
-
-        return (
-            newPosition.x < -halfWidth + 0.1 ||
-            newPosition.x > halfWidth - 0.1 ||
-            newPosition.z < -halfDepth + 0.1 ||
-            newPosition.z > halfDepth - 0.1
-        );
-    };
-
-    const handleKeyDown = (event) => {
-        const camera = cameraRef.current;
-        const direction = new THREE.Vector3();
-        const right = new THREE.Vector3();
-        const newPosition = camera.position.clone();
-
-        switch (event.key) {
-            case 'z':
-                camera.getWorldDirection(direction);
-                direction.y = 0;
-                direction.normalize();
-                camera.position.addScaledVector(direction, moveSpeed);
-                break;
-            case 's':
-                camera.getWorldDirection(direction);
-                direction.y = 0;
-                direction.normalize();
-                camera.position.addScaledVector(direction, -moveSpeed);
-                break;
-            case 'q':
-                camera.getWorldDirection(direction);
-                direction.y = 0;
-                direction.normalize();
-                right.crossVectors(camera.up, direction).normalize();
-                camera.position.addScaledVector(right, moveSpeed);
-                break;
-            case 'd':
-                camera.getWorldDirection(direction);
-                direction.y = 0;
-                direction.normalize();
-                right.crossVectors(camera.up, direction).normalize();
-                camera.position.addScaledVector(right, -moveSpeed);
-                break;
-            default:
-                break;
-        }
-
-        camera.position.y = groundHeight;
-
-        if (checkCollision(camera.position)) {
-            camera.position.copy(newPosition);
-        }
-    };
-
-    const handleMouseMove = (event) => {
-        if (isMouseDown || isTouchDevice) {
-            console.log('Mouse Movement Detected:', event.movementX);
-            const camera = cameraRef.current;
-            camera.rotation.y -= event.movementX * rotationSpeed;
-        }
-    };
-
-    const handleTouchMove = (event) => {
-        if (isTouchDevice) {
-            const camera = cameraRef.current;
-            const touch = event.touches[0];
-            const movementX = touch.clientX - lastTouchRef.current.x;
-            lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
-
-            camera.rotation.y -= movementX * rotationSpeed;
-        }
-    };
-
-    const handleMouseDown = (event) => {
-        if (event.button === 0) {
-            setIsMouseDown(true);
-        }
-    };
-
-    const handleMouseUp = (event) => {
-        if (event.button === 0) {
-            setIsMouseDown(false);
-        }
-    };
-
-    const handleTouchStart = (event) => {
-        if (isTouchDevice) {
-            const touch = event.touches[0];
-            lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
-        }
-    };
+    const keyDownHandler = (event) => handleKeyDown(event, cameraRef, moveSpeed, groundHeight, roomDimensions);
+    const mouseMoveHandler = (event) => handleMouseMove(event, isMouseDown, isTouchDevice, cameraRef, rotationSpeed);
+    const mouseDownHandler = (event) => handleMouseDown(event, setIsMouseDown);
+    const mouseUpHandler = (event) => handleMouseUp(event, setIsMouseDown);
+    const touchMoveHandler = (event) => handleTouchMove(event, isTouchDevice, cameraRef, lastTouchRef, rotationSpeed);
+    const touchStartHandler = (event) => handleTouchStart(event, isTouchDevice, lastTouchRef);
+    const joystickStartHandler = ()  => window.removeEventListener('touchmove', touchMoveHandler);
+    const joystickEndHandler = () => window.addEventListener('touchmove', touchMoveHandler);
 
     useEffect(() => {
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mousedown', handleMouseDown);
-        window.addEventListener('mouseup', handleMouseUp);
-
-        window.addEventListener('touchstart', handleTouchStart);
-        window.addEventListener('touchmove', handleTouchMove);
+        addEventListeners(
+            keyDownHandler,
+            mouseMoveHandler,
+            mouseDownHandler,
+            mouseUpHandler,
+            touchMoveHandler,
+            touchStartHandler,
+            joystickStartHandler,
+            joystickEndHandler
+        );
 
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mousedown', handleMouseDown);
-            window.removeEventListener('mouseup', handleMouseUp);
-
-            window.removeEventListener('touchstart', handleTouchStart);
-            window.removeEventListener('touchmove', handleTouchMove);
+            removeEventListeners(
+                keyDownHandler,
+                mouseMoveHandler,
+                mouseDownHandler,
+                mouseUpHandler,
+                touchMoveHandler,
+                touchStartHandler,
+                joystickStartHandler,
+                joystickEndHandler
+            );
         };
-    }, [isMouseDown, isTouchDevice]); // Include isTouchDevice in the dependency array
+    }, [isMouseDown, isTouchDevice]);
 
     return (
         <div>
-            <input type="file" accept="image/*" onChange={handleFileChange} />
             <div ref={mountRef}>
-                <Room scene={sceneRef.current} texture={texture} />
+                <Room scene={sceneRef.current} />
                 <Sphere scene={sceneRef.current} />
+                {isTouchDevice && (
+                    <VirtualJoystick
+                        cameraRef={cameraRef}
+                        moveSpeed={moveSpeed}
+                        roomDimensions={roomDimensions}
+                        groundHeight={groundHeight}
+                        rotationSpeed={rotationSpeed}
+                        lastTouchRef={lastTouchRef}
+                        isTouchDevice={isTouchDevice}
+                    />
+                )}
             </div>
         </div>
     );

@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import * as THREE from 'three';
-import { getFresnelMat } from './utils/getFresnelMat';
-import getStarfield from './utils/getStarfield';
+import { getFresnelMat } from '../utils/getFresnelMat.jsx';
+import getStarfield from '../utils/getStarfield.jsx';
 import PropTypes from 'prop-types';
-import EarthMap from './assets/textures/00_earthmap1k.jpg';
-import EarthSpec from './assets/textures/02_earthspec1k.jpg';
-import EarthBump from './assets/textures/01_earthbump1k.jpg';
-import EarthLights from './assets/textures/03_earthlights1k.jpg';
-import EarthClouds from './assets/textures/04_earthcloudmap.jpg';
-import EarthCloudsTrans from './assets/textures/05_earthcloudmaptrans.jpg';
+import EarthMap from '../assets/textures/00_earthmap1k.jpg';
+import EarthSpec from '../assets/textures/02_earthspec1k.jpg';
+import EarthBump from '../assets/textures/01_earthbump1k.jpg';
+import EarthLights from '../assets/textures/03_earthlights1k.jpg';
+import EarthClouds from '../assets/textures/04_earthcloudmap.jpg';
+import EarthCloudsTrans from '../assets/textures/05_earthcloudmaptrans.jpg';
 
 
 function Sphere({ scene }) {

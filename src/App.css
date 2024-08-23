@@ -18,3 +18,55 @@ position: absolute;
   top : 0;
     left : 0;
 }
+
+body {
+  overflow: hidden;
+}
+
+/* JOYSTICK */
+#joystickContainer {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 100px;
+  height: 100px;
+  background-color: #333;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#joystick {
+  width: 60px;
+  height: 60px;
+  background-color: #aaa;
+  border-radius: 50%;
+  position: relative;
+  transition: transform 0.1s;
+}
+
+#joystickContainer:before {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#joystickContainer .left,
+#joystickContainer .right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #555;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+#joystickContainer .left {
+  left: 10px;
+}
+
+#joystickContainer .right {
+  right: 10px;
+}

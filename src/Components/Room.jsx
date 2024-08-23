@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import * as THREE from 'three';
-import Board from './Board';
-import WallBrick from "./assets/textures/06_brick_texture.jpeg";
-import WoodFloor from "./assets/textures/07_woody_floor.jpeg";
-import Ceiling from "./assets/textures/08_ceiling.jpeg";
-import PropTypes from "prop-types";
+import Board from './Board.jsx';
+import WallBrick from "../assets/textures/06_brick_texture.jpeg";
+import WoodFloor from "../assets/textures/07_woody_floor.jpeg";
+import Ceiling from "../assets/textures/08_ceiling.jpeg";
+import PropTypes from 'prop-types';
 
-
-function Room({ scene, texture }) {
+function Room({ scene }) {
     useEffect(() => {
         const loader = new THREE.TextureLoader();
+
         const brickTexture = loader.load(
             WallBrick,
             (texture) => {
@@ -109,20 +109,13 @@ function Room({ scene, texture }) {
 
     return (
         <>
-            <Board scene={scene} texture={texture} />
+            <Board scene={scene} />
         </>
     );
 }
 
 Room.propTypes = {
-    scene: PropTypes.object.isRequired,
-    texture: PropTypes.shape({
-        wrapS: PropTypes.any,
-        wrapT: PropTypes.any,
-        repeat: PropTypes.shape({
-            set: PropTypes.func.isRequired,
-        }).isRequired,
-    }).isRequired,
+    scene: PropTypes.object,
 };
 
 export default Room;
