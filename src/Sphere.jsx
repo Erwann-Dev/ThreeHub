@@ -1,8 +1,15 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import * as THREE from 'three';
-import { getFresnelMat } from './getFresnelMat';
-import getStarfield from './getStarfield';
+import { getFresnelMat } from './utils/getFresnelMat';
+import getStarfield from './utils/getStarfield';
 import PropTypes from 'prop-types';
+import EarthMap from './assets/textures/00_earthmap1k.jpg';
+import EarthSpec from './assets/textures/02_earthspec1k.jpg';
+import EarthBump from './assets/textures/01_earthbump1k.jpg';
+import EarthLights from './assets/textures/03_earthlights1k.jpg';
+import EarthClouds from './assets/textures/04_earthcloudmap.jpg';
+import EarthCloudsTrans from './assets/textures/05_earthcloudmaptrans.jpg';
+
 
 function Sphere({ scene }) {
     useEffect(() => {
@@ -18,27 +25,27 @@ function Sphere({ scene }) {
         // Create Earth geometry and materials
         const geometry = new THREE.IcosahedronGeometry(1, detail);
         const earthMaterial = new THREE.MeshPhongMaterial({
-            map: loader.load("./textures/00_earthmap1k.jpg"),
-            specularMap: loader.load("./textures/02_earthspec1k.jpg"),
-            bumpMap: loader.load("./textures/01_earthbump1k.jpg"),
+            map: loader.load(EarthMap),
+            specularMap: loader.load(EarthSpec),
+            bumpMap: loader.load(EarthBump),
             bumpScale: 0.04,
         });
         const earthMesh = new THREE.Mesh(geometry, earthMaterial);
         earthGroup.add(earthMesh);
 
         const lightsMat = new THREE.MeshBasicMaterial({
-            map: loader.load("./textures/03_earthlights1k.jpg"),
+            map: loader.load(EarthLights),
             blending: THREE.AdditiveBlending,
         });
         const lightsMesh = new THREE.Mesh(geometry, lightsMat);
         earthGroup.add(lightsMesh);
 
         const cloudsMat = new THREE.MeshStandardMaterial({
-            map: loader.load("./textures/04_earthcloudmap.jpg"),
+            map: loader.load("EarthClouds"),
             transparent: true,
             opacity: 0.8,
             blending: THREE.AdditiveBlending,
-            alphaMap: loader.load('./textures/05_earthcloudmaptrans.jpg'),
+            alphaMap: loader.load(EarthCloudsTrans),
         });
         const cloudsMesh = new THREE.Mesh(geometry, cloudsMat);
         cloudsMesh.scale.setScalar(1.003);
